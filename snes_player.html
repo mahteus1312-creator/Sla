@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href='data:application/manifest+json,{"name":"SNES Player","short_name":"SNES","display":"fullscreen","orientation":"landscape","background_color":"#000000","theme_color":"#000000","start_url":"."}'>
+<title>SNES Player</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;color:#eee;font-family:sans-serif;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+  #pick{display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;height:100%;text-align:center;padding:16px}
+  #pick label{background:#e63946;color:#fff;padding:16px 28px;border-radius:12px;font-size:18px}
+  #pick input{display:none}
+  #game{position:fixed;inset:0;width:100vw;height:100vh;display:none}
+</style>
+</head>
+<body>
+<div id="pick">
+  <h2>SNES Player</h2>
+  <label>Selecionar ROM e jogar em tela cheia<input type="file" id="rom" accept=".sfc,.smc,.zip"></label>
+  <small>A ROM fica só no seu aparelho. No iPhone: Compartilhar → Adicionar à Tela de Início.</small>
+</div>
+<div id="game"></div>
+<div id="msg" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:20px;background:#000;z-index:99"></div>
+<script>
+document.getElementById('rom').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    const el = document.documentElement;
+    if (el.requestFullscreen) await el.requestFullscreen({navigationUI:'hide'});
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+  } catch(_) {}
+  document.getElementById('pick').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  window.EJS_player = '#game';
+  window.EJS_core = 'snes9x';
+  window.EJS_gameUrl = URL.createObjectURL(f);
+  window.EJS_gameName = f.name;
+  window.EJS_startOnLoaded = true;
+  window.EJS_mobileMode = true;           // botões virtuais na tela
+  window.EJS_VirtualGamepadSettings = null;
+  window.EJS_defaultOptions = { 'ff-ratio': '1.5', 'virtual-gamepad': 'enabled' };
+  const msg = document.getElementById('msg');
+  const show = t => { msg.style.display='flex'; msg.innerHTML = t; };
+  window.EJS_onGameStart = () => { msg.style.display='none'; };
+  if (location.protocol === 'file:') {
+    show('Abra pelo link do GitHub Pages (https). Em arquivo local o emulador não carrega.');
+    return;
+  }
+  show('Carregando emulador...');
+  const bases = [
+    'https://cdn.emulatorjs.org/stable/data/',
+    'https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@latest/data/'
+  ];
+  let i = 0, started = false;
+  const load = () => {
+    if (i >= bases.length) { show('Falha ao carregar o emulador. Verifique a internet e recarregue.'); return; }
+    window.EJS_pathtodata = bases[i];
+    const s = document.createElement('script');
+    s.src = bases[i] + 'loader.js';
+    s.onerror = () => { i++; load(); };
+    document.body.appendChild(s);
+  };
+  load();
+  setTimeout(() => { if (msg.style.display !== 'none' && !started) show('Demorando... aguarde ou recarregue a página.'); }, 20000);
+});
+</script>
+</body>
+</html>
