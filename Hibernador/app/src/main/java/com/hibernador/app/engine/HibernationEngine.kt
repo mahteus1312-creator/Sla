@@ -217,7 +217,7 @@ object HibernationEngine {
     }
 
     private fun cacheBytes(context: Context, info: ApplicationInfo): Long? = try {
-        val ssm = context.getSystemService(StorageStatsManager::class.java)
+        val ssm = context.getSystemService(StorageStatsManager::class.java) ?: return null
         ssm.queryStatsForPackage(info.storageUuid, info.packageName, Process.myUserHandle()).cacheBytes
     } catch (t: Throwable) {
         null

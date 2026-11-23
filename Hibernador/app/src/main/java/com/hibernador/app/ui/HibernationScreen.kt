@@ -92,7 +92,8 @@ fun HibernationScreen(onExit: () -> Unit) {
         Text(
             when (state.phase) {
                 Phase.SCANNING -> "Procurando apps em segundo plano…"
-                Phase.RUNNING -> "Hibernando ${state.done + 1} de ${state.total}"
+                Phase.RUNNING -> if (state.total == 0) "Nenhum app para hibernar"
+                    else "Hibernando ${(state.done + 1).coerceAtMost(state.total)} de ${state.total}"
                 Phase.DONE -> "Hibernação concluída"
                 Phase.CANCELLED -> "Cancelado"
                 Phase.ERROR -> "Erro"

@@ -16,7 +16,7 @@ data class MemorySnapshot(val total: Long, val available: Long) {
 
 object MemoryReader {
     fun read(context: Context): MemorySnapshot {
-        val am = context.getSystemService(ActivityManager::class.java)
+        val am = context.getSystemService(ActivityManager::class.java) ?: return MemorySnapshot(0, 0)
         val info = ActivityManager.MemoryInfo()
         am.getMemoryInfo(info)
         return MemorySnapshot(total = info.totalMem, available = info.availMem)

@@ -3,15 +3,18 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Lua crescente -->
+    <!-- Lua crescente: círculo claro recortado por um círculo da cor do fundo -->
     <path
         android:fillColor="#FF5EEAD4"
-        android:pathData="M58,30 A24,24 0 1,0 78,66 A19,19 0 1,1 58,30 Z" />
-    <!-- Estrelas / "z" de sono -->
+        android:pathData="M32,54 a22,22 0 1,0 44,0 a22,22 0 1,0 -44,0 Z" />
+    <path
+        android:fillColor="#FF0D1117"
+        android:pathData="M46,46 a18,18 0 1,0 36,0 a18,18 0 1,0 -36,0 Z" />
+    <!-- "z" de sono -->
     <path
         android:fillColor="#FFA5B4FC"
-        android:pathData="M64,36 h10 v2.5 l-6.5,8 h6.5 v2.5 h-10 v-2.5 l6.5,-8 h-6.5 Z" />
+        android:pathData="M58,38 h10 v2.5 l-6.5,8 h6.5 v2.5 h-10 v-2.5 l6.5,-8 h-6.5 Z" />
     <path
         android:fillColor="#FFA5B4FC"
-        android:pathData="M72,24 h7 v2 l-4.5,5.5 h4.5 v2 h-7 v-2 l4.5,-5.5 h-4.5 Z" />
+        android:pathData="M68,28 h7 v2 l-4.5,5.5 h4.5 v2 h-7 v-2 l4.5,-5.5 h-4.5 Z" />
 </vector>
