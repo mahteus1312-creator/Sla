@@ -53,6 +53,8 @@ data class HibernationState(
     val cacheFreed: Long = 0,
     val cacheSupported: Boolean = true,
     val error: String? = null,
+    /** Resumo da detecção (exibido quando nada é encontrado). */
+    val diagnostics: String? = null,
 ) {
     val progress: Float
         get() = when {
@@ -113,11 +115,19 @@ object HibernationEngine {
             // Permite ler o tamanho do cache de outros apps (StorageStatsManager).
             exec(shell, "appops set ${context.packageName} GET_USAGE_STATS allow")
 
-            val (targets, protectedCount) = findTargets(context, shell, userId)
+            val scan = findTargets(context, shell, userId)
+            val targets = scan.targets
             coroutineContext.ensureActive()
 
             val memStart = MemoryReader.read(context).available
-            set { it.copy(phase = Phase.RUNNING, total = targets.size, protectedCount = protectedCount) }
+            set {
+                it.copy(
+                    phase = Phase.RUNNING,
+                    total = targets.size,
+                    protectedCount = scan.protectedCount,
+                    diagnostics = scan.diagnostics,
+                )
+            }
 
             for ((index, target) in targets.withIndex()) {
                 coroutineContext.ensureActive()
@@ -171,49 +181,104 @@ object HibernationEngine {
         }
     }
 
-    /** Apps em execução (via `ps`), menos os protegidos. */
-    private suspend fun findTargets(
-        context: Context,
-        shell: ShellClient,
-        userId: Int,
-    ): Pair<List<Pair<TargetApp, ApplicationInfo>>, Int> {
+    private class Scan(
+        val targets: List<Pair<TargetApp, ApplicationInfo>>,
+        val protectedCount: Int,
+        val diagnostics: String,
+    )
+
+    /**
+     * Apps em execução, menos os protegidos. Usa duas fontes:
+     * `dumpsys activity lru` (lista de processos do ActivityManager) e `ps -A`.
+     */
+    private suspend fun findTargets(context: Context, shell: ShellClient, userId: Int): Scan {
         val pm = context.packageManager
         val classifier = AppClassifier(context, RulesRepository.load())
-
-        var ps = exec(shell, "ps -A -o USER,NAME")
-        if (!ps.ok || ps.output.isBlank()) ps = exec(shell, "ps -A")
-        check(ps.ok) { "Não foi possível listar os processos: ${ps.output.take(200)}" }
-
+        @Suppress("DEPRECATION")
         val installed = pm.getInstalledApplications(0).associateBy { it.packageName }
         val running = mutableSetOf<String>()
+
+        fun addUid(uid: Int) {
+            if (uid / PER_USER_RANGE != userId) return
+            runCatching { pm.getPackagesForUid(uid) }.getOrNull()?.let { running.addAll(it) }
+        }
+
+        fun addName(processName: String) {
+            val base = processName.substringBefore(':')
+            if (base in installed) running += base
+        }
+
+        // 1) ActivityManager: linhas como "#12: cch+ 5 CEM ---- 1234:com.app/u0a150".
+        val amRegex = Regex("""\b\d+:([A-Za-z][\w.]*(?::[\w.\-]+)?)/(?:u(\d+)a(\d+)|(\d+))""")
+        var amCount = 0
+        for (cmd in listOf("dumpsys activity lru", "dumpsys activity processes")) {
+            val r = exec(shell, cmd)
+            if (!r.ok) continue
+            val before = running.size
+            for (m in amRegex.findAll(r.output)) {
+                addName(m.groupValues[1])
+                val uid = when {
+                    m.groupValues[2].isNotEmpty() ->
+                        m.groupValues[2].toInt() * PER_USER_RANGE + FIRST_APP_UID + m.groupValues[3].toInt()
+                    else -> m.groupValues[4].toIntOrNull()
+                }
+                if (uid != null) addUid(uid)
+            }
+            amCount = running.size - before
+            if (amCount > 0) break
+        }
+
+        // 2) ps: usuário "u0_a150" (ou uid numérico) + nome do processo.
+        val sizeBeforePs = running.size
+        var ps = exec(shell, "ps -A -o USER,NAME")
+        if (!ps.ok || ps.output.lines().size < 3) ps = exec(shell, "ps -A")
         val userRegex = Regex("^u(\\d+)_a(\\d+)$")
-        for (line in ps.output.lineSequence()) {
-            val parts = line.trim().split(Regex("\\s+"))
-            if (parts.size < 2) continue
-            val user = parts.first()
-            val name = parts.last().substringBefore(':')
-            if (name in installed) running += name
-            userRegex.matchEntire(user)?.let { m ->
-                if (m.groupValues[1].toInt() == userId) {
-                    val uid = userId * PER_USER_RANGE + FIRST_APP_UID + m.groupValues[2].toInt()
-                    pm.getPackagesForUid(uid)?.let { running.addAll(it) }
+        var psLines = 0
+        if (ps.ok) {
+            for (line in ps.output.lineSequence()) {
+                val parts = line.trim().split(Regex("\\s+"))
+                if (parts.size < 2) continue
+                psLines++
+                addName(parts.last())
+                val user = parts.first()
+                val m = userRegex.matchEntire(user)
+                when {
+                    m != null -> addUid(
+                        m.groupValues[1].toInt() * PER_USER_RANGE + FIRST_APP_UID + m.groupValues[2].toInt()
+                    )
+                    user.all { it.isDigit() } -> user.toIntOrNull()?.let { addUid(it) }
                 }
             }
         }
+        val psCount = running.size - sizeBeforePs
 
-        var protectedApps = 0
+        if (running.isEmpty() && !ps.ok) {
+            error("Não foi possível listar os processos: ${ps.output.take(200)}")
+        }
+
+        val reasons = mutableMapOf<String, Int>()
         val targets = running.mapNotNull { pkg ->
             val info = installed[pkg] ?: return@mapNotNull null
             if (!info.enabled) return@mapNotNull null
             val label = runCatching { pm.getApplicationLabel(info).toString() }.getOrDefault(pkg)
-            if (classifier.classify(info, label) != null) {
-                protectedApps++
+            val reason = classifier.classify(info, label)
+            if (reason != null) {
+                reasons[reason.label] = (reasons[reason.label] ?: 0) + 1
                 null
             } else {
                 TargetApp(pkg, label) to info
             }
         }.sortedBy { it.first.label.lowercase() }
-        return targets to protectedApps
+
+        val diagnostics = buildString {
+            append("Em execução: ${running.size} (sistema: $amCount, ps: $psCount de $psLines processos)")
+            if (reasons.isNotEmpty()) {
+                append("\nProtegidos: ")
+                append(reasons.entries.sortedByDescending { it.value }.joinToString(", ") { "${it.key} ${it.value}" })
+            }
+            append("\nShizuku uid: ${runCatching { rikka.shizuku.Shizuku.getUid() }.getOrDefault(-1)}")
+        }
+        return Scan(targets, reasons.values.sum(), diagnostics)
     }
 
     private fun cacheBytes(context: Context, info: ApplicationInfo): Long? = try {

@@ -128,6 +128,7 @@ fun HibernationScreen(onExit: () -> Unit) {
                 apps = state.completed.size,
                 protectedCount = state.protectedCount,
                 cacheSupported = state.cacheSupported,
+                diagnostics = state.diagnostics,
             )
             Phase.ERROR -> Text(
                 state.error ?: "Falha desconhecida",
@@ -231,7 +232,14 @@ private fun CompletedRow(r: AppResult) {
 }
 
 @Composable
-private fun SummaryCard(ramFreed: Long, cacheFreed: Long, apps: Int, protectedCount: Int, cacheSupported: Boolean) {
+private fun SummaryCard(
+    ramFreed: Long,
+    cacheFreed: Long,
+    apps: Int,
+    protectedCount: Int,
+    cacheSupported: Boolean,
+    diagnostics: String?,
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(18.dp),
@@ -248,6 +256,15 @@ private fun SummaryCard(ramFreed: Long, cacheFreed: Long, apps: Int, protectedCo
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,
             )
+            if (apps == 0 && diagnostics != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    diagnostics,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
