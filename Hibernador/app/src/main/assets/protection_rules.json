@@ -1,0 +1,87 @@
+{
+  "_info": "Regras de proteção do Hibernador. Apps que casarem com qualquer regra NUNCA são parados nem têm o cache limpo. Pacotes: nome exato (também cobre subpacotes 'pacote.*') ou prefixo terminado em '*'. Palavras-chave: comparadas (sem acento, minúsculas) com o nome do pacote e o nome visível do app.",
+
+  "protectGames": true,
+
+  "bankPackages": [
+    "com.nu.production",
+    "com.itau*",
+    "br.com.itau*",
+    "br.com.bradesco*",
+    "com.bradesco*",
+    "br.com.bb.android",
+    "br.com.gabba.Caixa",
+    "br.gov.caixa*",
+    "com.santander*",
+    "br.com.santander*",
+    "br.com.intermedium",
+    "com.c6bank.app",
+    "com.picpay",
+    "com.mercadopago.wallet",
+    "br.com.uol.ps.myaccount",
+    "com.neon",
+    "br.com.original.bank",
+    "com.btg.pactual*",
+    "br.com.xp*",
+    "br.com.sicredi*",
+    "br.com.sicoob*",
+    "com.sicoob*",
+    "br.com.banrisul*",
+    "com.paypal*",
+    "com.revolut.revolut",
+    "com.transferwise.android",
+    "com.google.android.apps.walletnfcrel",
+    "com.samsung.android.spay",
+    "com.samsung.android.samsungpay*",
+    "com.binance.dev",
+    "com.coinbase.android",
+    "io.metamask",
+    "com.wallet.crypto.trustapp"
+  ],
+
+  "bankKeywords": [
+    "bank", "banco", "banking", "wallet", "carteira", "fintech",
+    "pagbank", "pagseguro", "nubank", "bradesco", "santander", "itau",
+    "caixa tem", "mercado pago", "picpay", "paypal", "crypto", "bitcoin",
+    "corretora", "invest"
+  ],
+
+  "securityPackages": [
+    "com.google.android.apps.authenticator2",
+    "com.azure.authenticator",
+    "com.authy.authy",
+    "com.duosecurity.duomobile",
+    "org.fedorahosted.freeotp",
+    "com.beemdevelopment.aegis",
+    "com.x8bit.bitwarden",
+    "com.lastpass.lpandroid",
+    "com.agilebits.onepassword",
+    "com.dashlane",
+    "keepass2android*",
+    "com.kunzisoft.keepass*",
+    "com.google.android.apps.adm",
+    "com.samsung.android.fmm",
+    "com.kms.free",
+    "com.kaspersky*",
+    "com.avast*",
+    "com.antivirus",
+    "com.wsandroid.suite",
+    "com.symantec*",
+    "com.bitdefender*",
+    "com.eset*",
+    "org.malwarebytes.antimalware",
+    "com.trendmicro*",
+    "com.sophos*"
+  ],
+
+  "securityKeywords": [
+    "antivirus", "anti-virus", "malware", "security", "seguranca",
+    "authenticator", "autenticador", "2fa", "password", "senha", "vault",
+    "keepass", "bitwarden", "lastpass", "1password", "dashlane",
+    "kaspersky", "avast", "mcafee", "norton", "bitdefender", "eset",
+    "find my", "findmy", "localizar", "encontre meu"
+  ],
+
+  "extraProtectedPackages": [
+  ]
+}

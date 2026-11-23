@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Lua crescente -->
+    <path
+        android:fillColor="#FF5EEAD4"
+        android:pathData="M58,30 A24,24 0 1,0 78,66 A19,19 0 1,1 58,30 Z" />
+    <!-- Estrelas / "z" de sono -->
+    <path
+        android:fillColor="#FFA5B4FC"
+        android:pathData="M64,36 h10 v2.5 l-6.5,8 h6.5 v2.5 h-10 v-2.5 l6.5,-8 h-6.5 Z" />
+    <path
+        android:fillColor="#FFA5B4FC"
+        android:pathData="M72,24 h7 v2 l-4.5,5.5 h4.5 v2 h-7 v-2 l4.5,-5.5 h-4.5 Z" />
+</vector>
